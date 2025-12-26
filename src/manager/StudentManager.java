@@ -1,15 +1,9 @@
 package manager;
 
 import model.Student;
-import model.Course;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-/**
- * StudentManager now supports filtering by courses
- */
 public class StudentManager {
 
     private List<Student> students;
@@ -18,18 +12,14 @@ public class StudentManager {
         students = new ArrayList<>();
     }
 
-    // --- Existing Methods ---
-
-    // Add student (returns false if duplicate ID)
-    public boolean addStudent(Student student) {
-        if (searchStudentById(student.getId()) != null) {
-            return false; // duplicate ID
-        }
-        students.add(student);
+    // Add student with validation for duplicate ID
+    public boolean addStudent(Student s) {
+        if (searchStudentById(s.getId()) != null) return false;
+        students.add(s);
         return true;
     }
 
-    // Search student by ID
+    // Search by ID
     public Student searchStudentById(String id) {
         for (Student s : students) {
             if (s.getId().equals(id)) return s;
@@ -57,17 +47,31 @@ public class StudentManager {
         return students.size();
     }
 
-    // --- New Feature: Filter Students by Course ---
-    /**
-     * Returns a list of students assigned to a specific course
-     *
-     * @param course the course to filter by
-     * @return list of students enrolled in the course
-     */
-    public List<Student> getStudentsByCourse(Course course) {
-        if (course == null) return new ArrayList<>();
-        return students.stream()
-                .filter(s -> s.getCourses().contains(course))
-                .collect(Collectors.toList());
+    // Count students by department
+    public int countByDepartment(String dept) {
+        int count = 0;
+        for (Student s : students) {
+            if (s.getDepartment().equals(dept)) count++;
+        }
+        return count;
+    }
+
+    // Count students by batch
+    public int countByBatch(String batch) {
+        int count = 0;
+        for (Student s : students) {
+            if (s.getBatch() != null && s.getBatch().equals(batch)) count++;
+        }
+        return count;
+    }
+
+    // Enrollment status: "Enrolled" if courses assigned, otherwise "Not Enrolled"
+    public String getEnrollmentStatus(Student s) {
+        return s.getCourses().isEmpty() ? "Not Enrolled" : "Enrolled";
+    }
+
+    // Clear all students
+    public void clearAllStudents() {
+        students.clear();
     }
 }

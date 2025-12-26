@@ -14,11 +14,9 @@ import manager.StudentManager;
 import model.Course;
 import model.Instructor;
 import model.Student;
+import javafx.beans.property.SimpleStringProperty;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MainView {
 
@@ -26,7 +24,8 @@ public class MainView {
     private ObservableList<Student> studentList;
 
     // --- Student fields ---
-    private TextField idField, nameField, deptField, searchIdField, deleteIdField;
+    private TextField idField, nameField, searchIdField, deleteIdField;
+    private ComboBox<String> deptCombo, batchCombo;
     private TableView<Student> studentTable;
     private Label totalLabel;
 
@@ -61,16 +60,23 @@ public class MainView {
 
         idField = new TextField();
         nameField = new TextField();
-        deptField = new TextField();
+
+        deptCombo = new ComboBox<>();
+        deptCombo.getItems().addAll("CS", "IT", "Math", "Physics", "Chemistry");
+        deptCombo.setPromptText("Select Department");
+
+        batchCombo = new ComboBox<>();
+        batchCombo.getItems().addAll("Batch A", "Batch B", "Batch C");
+        batchCombo.setPromptText("Select Batch");
 
         inputGrid.addRow(0, new Label("ID:"), idField);
         inputGrid.addRow(1, new Label("Name:"), nameField);
-        inputGrid.addRow(2, new Label("Department:"), deptField);
+        inputGrid.addRow(2, new Label("Department:"), deptCombo);
+        inputGrid.addRow(3, new Label("Batch:"), batchCombo);
 
         Button addBtn = createButton("Add Student", "#4CAF50");
         addBtn.setOnAction(e -> addStudent());
-
-        inputGrid.add(addBtn, 1, 3);
+        inputGrid.add(addBtn, 1, 4);
         studentCard.getChildren().add(inputGrid);
 
         // =================== STUDENT ACTION CARD ===================
@@ -122,8 +128,12 @@ public class MainView {
         nameCol.setCellValueFactory(new PropertyValueFactory<>("name"));
         TableColumn<Student, String> deptCol = new TableColumn<>("Department");
         deptCol.setCellValueFactory(new PropertyValueFactory<>("department"));
+        TableColumn<Student, String> batchCol = new TableColumn<>("Batch");
+        batchCol.setCellValueFactory(new PropertyValueFactory<>("batch"));
+        TableColumn<Student, String> statusCol = new TableColumn<>("Status");
+        statusCol.setCellValueFactory(cell -> new SimpleStringProperty(cell.getValue().getEnrollmentStatus()));
 
-        studentTable.getColumns().addAll(idCol, nameCol, deptCol);
+        studentTable.getColumns().addAll(idCol, nameCol, deptCol, batchCol, statusCol);
         tableCard.getChildren().add(studentTable);
 
         totalLabel = new Label("Total Students: 0");
@@ -181,15 +191,6 @@ public class MainView {
         assignGrid.add(assignBtn, 1, 2);
         assignCard.getChildren().add(assignGrid);
 
-        // =================== VIEW COURSES CARD ===================
-        VBox viewCard = createCard("View Student Courses");
-        HBox viewBox = new HBox(10);
-        TextField viewStudentIdField = new TextField();
-        viewStudentIdField.setPromptText("Student ID");
-        Button viewBtn = createButton("View Courses", "#795548");
-        viewBox.getChildren().addAll(viewStudentIdField, viewBtn);
-        viewCard.getChildren().add(viewBox);
-
         // =================== STUDENT COURSES TABLE ===================
         VBox studentCoursesCard = createCard("Student Courses Table");
         studentCoursesTable = new TableView<>();
@@ -206,10 +207,10 @@ public class MainView {
         studentCoursesCard.getChildren().add(studentCoursesTable);
 
         // =================== ADD ALL CARDS ===================
-        root.getChildren().addAll(studentCard, actionCard, tableCard, instrCard, courseCard, assignCard, viewCard, studentCoursesCard);
+        root.getChildren().addAll(studentCard, actionCard, tableCard, instrCard, courseCard, assignCard, studentCoursesCard);
 
-        Scene scene = new Scene(scrollPane, 850, 950);
-        stage.setTitle("Student Registration System - Updated UI");
+        Scene scene = new Scene(scrollPane, 900, 1000);
+        stage.setTitle("Student Registration System - Restored Version");
         stage.setScene(scene);
         stage.show();
 
@@ -265,17 +266,9 @@ public class MainView {
                 if (added) {
                     showAlert(Alert.AlertType.INFORMATION,"Success","Course assigned!");
                     updateStudentCoursesTable(s);
+                    studentTable.refresh();
                 } else showAlert(Alert.AlertType.WARNING,"Already assigned","Student has this course!");
             }
-        });
-
-        viewBtn.setOnAction(e -> {
-            String studentId = viewStudentIdField.getText().trim();
-            if (studentId.isEmpty()){ showAlert(Alert.AlertType.WARNING,"Enter ID",""); return; }
-            Student s = manager.searchStudentById(studentId);
-            if (s==null){ showAlert(Alert.AlertType.ERROR,"Not found",""); return; }
-            String courses = s.listCourseNames();
-            showAlert(Alert.AlertType.INFORMATION,"Courses for "+s.getName(),courses);
         });
     }
 
@@ -301,23 +294,31 @@ public class MainView {
     private void addStudent() {
         String id = idField.getText().trim();
         String name = nameField.getText().trim();
-        String dept = deptField.getText().trim();
-        if (id.isEmpty() || name.isEmpty() || dept.isEmpty()){ showAlert(Alert.AlertType.WARNING,"Fill all fields!",""); return; }
-        Student s = new Student(id,name,dept);
+        String dept = deptCombo.getSelectionModel().getSelectedItem();
+        String batch = batchCombo.getSelectionModel().getSelectedItem();
+        if (id.isEmpty() || name.isEmpty() || dept==null || batch==null){
+            showAlert(Alert.AlertType.WARNING,"Validation Error","All fields must be filled");
+            return;
+        }
+        Student s = new Student(id,name,dept,batch);
         boolean added = manager.addStudent(s);
-        if (added){ studentList.add(s); showAlert(Alert.AlertType.INFORMATION,"Added","Student added!"); clearInputFields(); updateTotalCount();}
-        else showAlert(Alert.AlertType.ERROR,"Duplicate","ID exists!");
+        if (added){
+            studentList.add(s);
+            showAlert(Alert.AlertType.INFORMATION,"Added","Student added!");
+            clearInputFields();
+            updateTotalCount();
+        } else showAlert(Alert.AlertType.ERROR,"Duplicate","ID exists!");
     }
 
-    private void searchStudent() {
+    private void searchStudent(){
         String id = searchIdField.getText().trim();
-        if(id.isEmpty()){ showAlert(Alert.AlertType.WARNING,"Enter ID",""); return; }
+        if(id.isEmpty()){ displayAllStudents(); return; }
         Student s = manager.searchStudentById(id);
-        if(s!=null) showAlert(Alert.AlertType.INFORMATION,"Found",s.toString());
+        if(s!=null) studentList.setAll(s);
         else showAlert(Alert.AlertType.ERROR,"Not Found","Student not found!");
     }
 
-    private void deleteStudent() {
+    private void deleteStudent(){
         String id = deleteIdField.getText().trim();
         if(id.isEmpty()){ showAlert(Alert.AlertType.WARNING,"Enter ID",""); return; }
         Student s = manager.searchStudentById(id);
@@ -356,17 +357,19 @@ public class MainView {
     private void generateRandomStudent(){
         String[] names = {"Ali","Sara","John","Lily","Maya","Daniel"};
         String[] depts = {"CS","IT","Math","Physics","Chemistry"};
+        String[] batches = {"Batch A","Batch B","Batch C"};
         int idNum = 1000+manager.getStudentCount()+1;
         String id = String.valueOf(idNum);
         String name = names[(int)(Math.random()*names.length)];
         String dept = depts[(int)(Math.random()*depts.length)];
-        Student s = new Student(id,name,dept);
+        String batch = batches[(int)(Math.random()*batches.length)];
+        Student s = new Student(id,name,dept,batch);
         manager.addStudent(s); studentList.add(s); updateTotalCount();
     }
 
     private void updateTotalCount(){ totalLabel.setText("Total Students: "+manager.getStudentCount()); }
 
-    private void clearInputFields(){ idField.clear(); nameField.clear(); deptField.clear(); }
+    private void clearInputFields(){ idField.clear(); nameField.clear(); deptCombo.getSelectionModel().clearSelection(); batchCombo.getSelectionModel().clearSelection(); }
 
     private void showAlert(Alert.AlertType type,String title,String msg){
         Alert a = new Alert(type); a.setTitle(title); a.setHeaderText(null); a.setContentText(msg); a.showAndWait();

@@ -5,85 +5,70 @@ import java.util.List;
 
 /**
  * Student class represents a student in the system.
- * Now supports assigned courses.
+ * Now supports assigned courses, batch, and enrollment status.
  */
 public class Student {
 
     private String id;
     private String name;
     private String department;
-
-    // New feature: list of courses
+    private String batch; // new field for batch
     private List<Course> courses;
 
     // Constructor
-    public Student(String id, String name, String department) {
+    public Student(String id, String name, String department, String batch) {
         this.id = id;
         this.name = name;
         this.department = department;
-        this.courses = new ArrayList<>(); // initialize empty course list
+        this.batch = batch;
+        this.courses = new ArrayList<>();
     }
 
     // --- Getters and Setters ---
-    public String getId() {
-        return id;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getName() {
-        return name;
-    }
+    public String getDepartment() { return department; }
+    public void setDepartment(String department) { this.department = department; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public String getBatch() { return batch; }
+    public void setBatch(String batch) { this.batch = batch; }
 
-    public String getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(String department) {
-        this.department = department;
-    }
-
-    public List<Course> getCourses() {
-        return courses;
-    }
+    public List<Course> getCourses() { return courses; }
 
     // --- Course Helper Methods ---
-
-    // Add a course to student
     public boolean addCourse(Course course) {
         if (course == null) return false;
         if (!courses.contains(course)) {
             courses.add(course);
             return true;
         }
-        return false; // course already assigned
+        return false;
     }
 
-    // Remove a course from student
     public boolean removeCourse(Course course) {
         return courses.remove(course);
     }
 
-    // Get a formatted string of all course names
     public String listCourseNames() {
         if (courses.isEmpty()) return "No courses assigned";
         StringBuilder sb = new StringBuilder();
         for (Course c : courses) {
-            sb.append(c.getCourseName()).append(" (").append(c.getId()).append(")");
-            sb.append("\n");
+            sb.append(c.getCourseName()).append(" (").append(c.getId()).append(")\n");
         }
         return sb.toString();
     }
 
-    // --- ToString ---
+    // Enrollment status
+    public String getEnrollmentStatus() {
+        return courses.isEmpty() ? "Not Enrolled" : "Enrolled";
+    }
+
     @Override
     public String toString() {
-        return "Student ID: " + id + ", Name: " + name + ", Department: " + department;
+        return "Student ID: " + id + ", Name: " + name + ", Department: " + department + ", Batch: " + batch;
     }
 }

@@ -1,30 +1,31 @@
 package model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Course class represents a course in the system.
- * Each course can have an assigned instructor.
+ * Supports assigned instructor and enrolled students.
  */
 public class Course {
 
     private String id;
     private String courseName;
-    private Instructor assignedInstructor;
+    private Instructor instructor;   // New: course instructor
+    private List<Student> enrolledStudents; // New: students enrolled
 
-    // Constructor without instructor
-    public Course(String id, String courseName) {
-        this.id = id;
-        this.courseName = courseName;
-        this.assignedInstructor = null; // can be assigned later
-    }
-
-    // Constructor with instructor
+    // Constructor
     public Course(String id, String courseName, Instructor instructor) {
         this.id = id;
         this.courseName = courseName;
-        this.assignedInstructor = instructor;
+        this.instructor = instructor;
+        this.enrolledStudents = new ArrayList<>();
+        if (instructor != null) {
+            instructor.assignCourse(this); // Sync with instructor
+        }
     }
 
-    // Getters and Setters
+    // --- Getters and Setters ---
     public String getId() {
         return id;
     }
@@ -41,18 +42,55 @@ public class Course {
         this.courseName = courseName;
     }
 
-    public Instructor getAssignedInstructor() {
-        return assignedInstructor;
+    public Instructor getInstructor() {
+        return instructor;
     }
 
-    public void setAssignedInstructor(Instructor assignedInstructor) {
-        this.assignedInstructor = assignedInstructor;
+    public void setInstructor(Instructor instructor) {
+        this.instructor = instructor;
+        if(instructor != null && !instructor.getAssignedCourses().contains(this)) {
+            instructor.assignCourse(this);
+        }
     }
 
-    // ToString method for display
+    public List<Student> getEnrolledStudents() {
+        return enrolledStudents;
+    }
+
+    // --- Enrollment helper methods ---
+    public boolean enrollStudent(Student student) {
+        if(student == null) return false;
+        if(!enrolledStudents.contains(student)) {
+            enrolledStudents.add(student);
+            student.addCourse(this); // Sync with student
+            return true;
+        }
+        return false;
+    }
+
+    public boolean removeStudent(Student student) {
+        if(student != null) {
+            enrolledStudents.remove(student);
+            student.removeCourse(this);
+            return true;
+        }
+        return false;
+    }
+
+    // Optional: list names of enrolled students
+    public String listStudentNames() {
+        if(enrolledStudents.isEmpty()) return "No students enrolled";
+        StringBuilder sb = new StringBuilder();
+        for(Student s : enrolledStudents) {
+            sb.append(s.getName()).append(" (").append(s.getId()).append(")\n");
+        }
+        return sb.toString();
+    }
+
+    // --- ToString ---
     @Override
     public String toString() {
-        String instructorInfo = (assignedInstructor != null) ? assignedInstructor.getName() : "No instructor assigned";
-        return "Course ID: " + id + ", Name: " + courseName + ", Instructor: " + instructorInfo;
+        return "Course ID: " + id + ", Name: " + courseName + 
+               ", Instructor: " + (instructor != null ? instructor.getName() : "None");
     }
 }
