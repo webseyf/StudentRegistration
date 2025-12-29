@@ -66,7 +66,7 @@ public class MainView {
         deptCombo.setPromptText("Select Department");
 
         batchCombo = new ComboBox<>();
-        batchCombo.getItems().addAll("Batch A", "Batch B", "Batch C");
+        batchCombo.getItems().addAll("2014","2015","2016", "2017", "2018", "2019");
         batchCombo.setPromptText("Select Batch");
 
         inputGrid.addRow(0, new Label("ID:"), idField);
@@ -356,7 +356,7 @@ public class MainView {
 
     private void generateRandomStudent(){
         String[] names = {"Ali","Sara","John","Lily","Maya","Daniel"};
-        String[] depts = {"CS","IT","Math","Physics","Chemistry"};
+        String[] depts = {"OOP","IP","CS","Computer Sceince","IT","Math","Physics","Chemistry"};
         String[] batches = {"Batch A","Batch B","Batch C"};
         int idNum = 1000+manager.getStudentCount()+1;
         String id = String.valueOf(idNum);
